@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real Estate Advisor Assistant</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            margin: 30px 0;
+        }
+        form input[type=file], form input[type=text] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        form input[type=submit] {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #5cb85c;
+            color: white;
+            cursor: pointer;
+        }
+        form input[type=submit]:hover {
+            background-color: #4cae4c;
+        }
+        #answer {
+            background-color: #dff0d8;
+            color: #3c763d;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #d6e9c6;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Real Estate Advisor Assistant</h1>
+
+    <!-- Form to Upload File -->
+    <h2>Upload your file</h2>
+    <form id="fileUploadForm">
+        <input type="file" id="fileInput" name="file" required>
+        <input type="submit" value="Upload and Create Assistant">
+    </form>
+
+    <!-- Form to Ask a Question -->
+    <h2>Ask a question</h2>
+    <form id="questionForm" style="display:none;">
+        <input type="text" id="questionInput" name="question" placeholder="Your question..." required>
+        <input type="submit" value="Ask">
+    </form>
+
+    <!-- Display the Answer -->
+    <div id="answer"></div>
+</div>
+
+<script>
+    document.getElementById('fileUploadForm').onsubmit = async function (e) {
+        e.preventDefault();
+        var formData = new FormData();
+        var fileField = document.getElementById('fileInput');
+        
+        formData.append('file', fileField.files[0]);
+
+        try {
+            const response = await fetch('/upload_and_create_assistant', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            // Assuming the response includes an assistant_id in the result
+            sessionStorage.setItem('assistantId', result.assistant_id);
+            document.getElementById('questionForm').style.display = 'block';
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    };
+
+    document.getElementById('questionForm').onsubmit = async function (e) {
+        e.preventDefault();
+        const assistantId = sessionStorage.getItem('assistantId');
+        if (!assistantId) {
+            alert("Assistant ID is not set. Please upload a file first.");
+            return;
+        }
+        var question = document.getElementById('questionInput').value;
+        
+        try {
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ question: question, assistant_id: assistantId })
+            });
+            const result = await response.json();
+            const answerDiv = document.getElementById('answer');
+            console.log(result);
+            answerDiv.textContent = result.answer;
+            answerDiv.style.display = 'block';
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    };
+</script>
+
+</body>
+</html>
