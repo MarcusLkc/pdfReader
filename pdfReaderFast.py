@@ -11,6 +11,8 @@ app = FastAPI()
 # Global variable to store the assistant ID
 global_assistant_id = None
 
+global_client = None
+
 # Define the request model for the API
 class QuestionRequest(BaseModel):
     question: str
@@ -26,7 +28,14 @@ async def read_index():
 
 # Initialize the OpenAI client
 def get_openai_client():
-    api_key = 'add your api key'
+    # check if global_client is none if so create a new client
+    global global_client
+    if global_client is None:
+        global_client = create_openai_client()
+    return global_client
+
+def create_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("The OPENAI_API_KEY environment variable is not set.")
     return openai.OpenAI(api_key=api_key)
@@ -41,7 +50,7 @@ async def create_assistant(file: UploadFile, client):
 
         assistant = client.beta.assistants.create(
             name="Custom Real Estate Advisor",
-            instructions="You are a real estate advisor. Use the knowledge base provided to respond to customer queries.",
+            instructions="You are smart assistant. Who can read any pdf or document. Use documents as firsy source of truth",
             tools=[{"type": "retrieval"}],
             model="gpt-4-1106-preview",
             file_ids=[file_id]
@@ -101,7 +110,7 @@ async def upload_and_create_assistant(file: UploadFile = File(...)):
 async def ask_endpoint(question_request: QuestionRequest):
     client = get_openai_client()
     response = ask_question(question_request.question, client)
-    print(response)
+    print('response', response)
     return {"answer": response}
 
 if __name__ == '__main__':
